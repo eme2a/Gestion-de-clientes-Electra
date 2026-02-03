@@ -1,0 +1,15 @@
+{
+  "name": "Clientes DB Server",
+  "version": "1.0.0",
+  "slug": "clientes_db",
+  "description": "Servidor central de base de datos de clientes",
+  "startup": "services",
+  "boot": "auto",
+  "host_network": true,
+  "ports": {
+    "3000/tcp": 3000
+  },
+  "options": {},
+  "schema": {},
+  "arch": ["amd64", "armv7", "armhf", "aarch64"]
+}
