@@ -1,0 +1,14 @@
+name: Clientes DB Sync
+slug: clientes_db
+version: "1.0.0"
+description: Sincronización de base de clientes
+startup: services
+boot: auto
+arch:
+  - amd64
+  - aarch64
+  - armv7
+ports:
+  3000/tcp: 3000
+options: {}
+schema: {}
