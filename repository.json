@@ -1,4 +1,13 @@
 {
-  "name": "Clientes DB Add-on",
-  "url": "https://github.com/eme2a/ha-addon-clientes-db"
+  "name": "Gestion de Clientes Electra",
+  "url": "https://github.com/eme2a/Gestion-de-clientes-Electra",
+  "addons": [
+    {
+      "slug": "clientes_db",
+      "name": "Clientes DB Sync",
+      "description": "Sincronización de base de clientes",
+      "version": "1.0.0",
+      "arch": ["amd64", "aarch64", "armv7"]
+    }
+  ]
 }
