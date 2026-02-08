@@ -8,6 +8,8 @@ RUN npm install --only=production
 COPY server.js ./
 COPY run.sh ./
 
+VOLUME ["/data"]
+
 RUN chmod +x /app/run.sh
 
 CMD ["/app/run.sh"]
