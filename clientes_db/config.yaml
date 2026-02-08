@@ -12,5 +12,3 @@ arch:
 
 ports:
   3000/tcp: 3000
-
-image: null
