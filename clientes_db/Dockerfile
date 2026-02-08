@@ -1,5 +1,4 @@
-ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base-nodejs:18
-FROM $BUILD_FROM
+FROM node:18-alpine
 
 WORKDIR /app
 
@@ -11,4 +10,4 @@ COPY run.sh ./
 
 RUN chmod +x /app/run.sh
 
-CMD [ "/app/run.sh" ]
+CMD ["/app/run.sh"]
