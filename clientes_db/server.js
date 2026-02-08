@@ -7,16 +7,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// aseguramos carpeta persistente
 const DATA_DIR = "/data";
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR);
-}
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 
-// base sqlite persistente
 const db = new sqlite3.Database("/data/clientes.db");
 
-// tabla
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS clientes (
@@ -27,37 +22,48 @@ db.serialize(() => {
   `);
 });
 
-// sanity
+/* ===== SANITY ===== */
 app.get("/ping", (req, res) => {
   res.json({ ok: true });
 });
 
-// obtener todos
+/* ===== GET TODOS (ARRAY) ===== */
 app.get("/clientes", (req, res) => {
-  db.all("SELECT * FROM clientes", [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
+  db.all("SELECT * FROM clientes ORDER BY nombre", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
 
-    const out = {};
-    rows.forEach(r => {
-      out[r.nombre] = {
-        ...JSON.parse(r.datos),
-        updated: r.updated
-      };
-    });
+    const clientes = rows.map(r => ({
+      nombre: r.nombre,
+      ...JSON.parse(r.datos || "{}"),
+      updated: r.updated
+    }));
 
-    res.json(out);
+    res.json(clientes);
   });
 });
 
-// crear / actualizar
-app.post("/clientes", (req, res) => {
-  const { nombre, datos } = req.body;
+/* ===== GET UNO ===== */
+app.get("/clientes/:nombre", (req, res) => {
+  db.get(
+    "SELECT * FROM clientes WHERE nombre = ?",
+    [req.params.nombre],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!row) return res.status(404).json({ error: "No encontrado" });
 
-  if (!nombre) {
-    return res.status(400).json({ error: "Falta nombre" });
-  }
+      res.json({
+        nombre: row.nombre,
+        ...JSON.parse(row.datos || "{}"),
+        updated: row.updated
+      });
+    }
+  );
+});
+
+/* ===== CREATE / UPDATE ===== */
+app.post("/clientes", (req, res) => {
+  const { nombre, ...datos } = req.body;
+  if (!nombre) return res.status(400).json({ error: "Falta nombre" });
 
   const updated = new Date().toISOString();
 
@@ -69,17 +75,26 @@ app.post("/clientes", (req, res) => {
       datos = excluded.datos,
       updated = excluded.updated
     `,
-    [nombre, JSON.stringify(datos || {}), updated],
+    [nombre, JSON.stringify(datos), updated],
     err => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ ok: true });
+    }
+  );
+});
 
+/* ===== DELETE ===== */
+app.delete("/clientes/:nombre", (req, res) => {
+  db.run(
+    "DELETE FROM clientes WHERE nombre = ?",
+    [req.params.nombre],
+    err => {
+      if (err) return res.status(500).json({ error: err.message });
       res.json({ ok: true });
     }
   );
 });
 
 app.listen(3000, () => {
-  console.log("Servidor clientes-db escuchando en puerto 3000");
+  console.log("Clientes-db OK en puerto 3000");
 });
