@@ -1,4 +1,4 @@
-name: Clientes DB Sync
+name: clientes DB Sync
 slug: clientes_db
 version: "1.0.0"
 description: Sincronización de base de clientes
