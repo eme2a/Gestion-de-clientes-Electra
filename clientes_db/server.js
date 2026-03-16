@@ -22,6 +22,13 @@ db.serialize(() => {
       updated TEXT
     )
   `);
+  db.run(`
+  CREATE TABLE IF NOT EXISTS pizzas (
+    nombre TEXT PRIMARY KEY,
+    datos TEXT NOT NULL,
+    updated TEXT
+  )
+`);
 });
 
 /* ===== SANITY ===== */
@@ -100,8 +107,58 @@ app.delete("/clientes/:nombre", (req, res) => {
     }
   );
 });
+/* ===== GET TODAS LAS PIZZAS ===== */
+app.get("/pizzas", (req, res) => {
+  db.all("SELECT * FROM pizzas ORDER BY nombre", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
 
+    const pizzas = rows.map(r => ({
+      nombre: r.nombre,
+      ...JSON.parse(r.datos),
+      updated: r.updated
+    }));
+
+    res.json(pizzas);
+  });
+});
+/* ===== CREATE / UPDATE PIZZA ===== */
+app.post("/pizzas", (req, res) => {
+  const { nombre, ...resto } = req.body;
+
+  if (!nombre) {
+    return res.status(400).json({ error: "Falta nombre" });
+  }
+
+  const updated = new Date().toISOString();
+  const datos = resto && Object.keys(resto).length ? resto : {};
+
+  db.run(
+    `
+    INSERT INTO pizzas (nombre, datos, updated)
+    VALUES (?, ?, ?)
+    ON CONFLICT(nombre) DO UPDATE SET
+      datos = excluded.datos,
+      updated = excluded.updated
+    `,
+    [nombre, JSON.stringify(datos), updated],
+    err => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ ok: true });
+    }
+  );
+});
+/* ===== DELETE PIZZA ===== */
+app.delete("/pizzas/:nombre", (req, res) => {
+  db.run(
+    "DELETE FROM pizzas WHERE nombre = ?",
+    [req.params.nombre],
+    err => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ ok: true });
+    }
+  );
+});
 /* ===== START ===== */
 app.listen(3000, () => {
-  console.log("Clientes-db OK en puerto 3000");
+  console.log("API clientes + pizzas OK en puerto 3000");
 });
