@@ -22,13 +22,22 @@ db.serialize(() => {
       updated TEXT
     )
   `);
+
   db.run(`
-  CREATE TABLE IF NOT EXISTS pizzas (
-    nombre TEXT PRIMARY KEY,
-    datos TEXT NOT NULL,
-    updated TEXT
-  )
-`);
+    CREATE TABLE IF NOT EXISTS pizzas (
+      nombre TEXT PRIMARY KEY,
+      datos TEXT NOT NULL,
+      updated TEXT
+    )
+  `);
+
+  // ✅ TABLA INSUMOS (ACÁ ESTABA LO QUE FALTABA)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS insumos (
+      id INTEGER PRIMARY KEY,
+      datos TEXT
+    )
+  `);
 });
 
 /* ===== SANITY ===== */
@@ -36,7 +45,7 @@ app.get("/ping", (req, res) => {
   res.json({ ok: true });
 });
 
-/* ===== GET TODOS ===== */
+/* ===== CLIENTES ===== */
 app.get("/clientes", (req, res) => {
   db.all("SELECT * FROM clientes ORDER BY nombre", [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -51,7 +60,6 @@ app.get("/clientes", (req, res) => {
   });
 });
 
-/* ===== GET UNO ===== */
 app.get("/clientes/:nombre", (req, res) => {
   db.get(
     "SELECT * FROM clientes WHERE nombre = ?",
@@ -69,7 +77,6 @@ app.get("/clientes/:nombre", (req, res) => {
   );
 });
 
-/* ===== CREATE / UPDATE ===== */
 app.post("/clientes", (req, res) => {
   const { nombre, ...resto } = req.body;
 
@@ -96,7 +103,6 @@ app.post("/clientes", (req, res) => {
   );
 });
 
-/* ===== DELETE ===== */
 app.delete("/clientes/:nombre", (req, res) => {
   db.run(
     "DELETE FROM clientes WHERE nombre = ?",
@@ -107,7 +113,8 @@ app.delete("/clientes/:nombre", (req, res) => {
     }
   );
 });
-/* ===== GET TODAS LAS PIZZAS ===== */
+
+/* ===== PIZZAS ===== */
 app.get("/pizzas", (req, res) => {
   db.all("SELECT * FROM pizzas ORDER BY nombre", [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -121,7 +128,7 @@ app.get("/pizzas", (req, res) => {
     res.json(pizzas);
   });
 });
-/* ===== CREATE / UPDATE PIZZA ===== */
+
 app.post("/pizzas", (req, res) => {
   const { nombre, ...resto } = req.body;
 
@@ -147,7 +154,7 @@ app.post("/pizzas", (req, res) => {
     }
   );
 });
-/* ===== DELETE PIZZA ===== */
+
 app.delete("/pizzas/:nombre", (req, res) => {
   db.run(
     "DELETE FROM pizzas WHERE nombre = ?",
@@ -158,37 +165,38 @@ app.delete("/pizzas/:nombre", (req, res) => {
     }
   );
 });
-// =====================
-// INSUMOS
-// =====================
 
-// obtener insumos
-app.get("/insumos", async (req, res) => {
-  try {
-    const result = await db.get("SELECT datos FROM insumos WHERE id = 1")
-    res.json(result ? JSON.parse(result.datos) : {})
-  } catch (e) {
-    res.json({})
-  }
-})
+/* ===== INSUMOS ===== */
 
-// guardar insumos
-app.post("/insumos", async (req, res) => {
-  try {
-    const data = JSON.stringify(req.body)
+// GET
+app.get("/insumos", (req, res) => {
+  db.get("SELECT datos FROM insumos WHERE id = 1", [], (err, row) => {
+    if (err) return res.json({});
+    if (!row) return res.json({});
 
-    await db.run(`
-      INSERT INTO insumos (id, datos)
-      VALUES (1, ?)
-      ON CONFLICT(id) DO UPDATE SET datos=excluded.datos
-    `, [data])
+    res.json(JSON.parse(row.datos));
+  });
+});
 
-    res.sendStatus(200)
-  } catch (e) {
-    res.sendStatus(500)
-  }
-})
+// POST
+app.post("/insumos", (req, res) => {
+  const data = JSON.stringify(req.body);
+
+  db.run(
+    `
+    INSERT INTO insumos (id, datos)
+    VALUES (1, ?)
+    ON CONFLICT(id) DO UPDATE SET datos=excluded.datos
+    `,
+    [data],
+    err => {
+      if (err) return res.sendStatus(500);
+      res.sendStatus(200);
+    }
+  );
+});
+
 /* ===== START ===== */
 app.listen(3000, () => {
-  console.log("API clientes + pizzas OK en puerto 3000");
+  console.log("API clientes + pizzas + insumos OK en puerto 3000");
 });
