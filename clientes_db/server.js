@@ -158,6 +158,36 @@ app.delete("/pizzas/:nombre", (req, res) => {
     }
   );
 });
+// =====================
+// INSUMOS
+// =====================
+
+// obtener insumos
+app.get("/insumos", async (req, res) => {
+  try {
+    const result = await db.get("SELECT datos FROM insumos WHERE id = 1")
+    res.json(result ? JSON.parse(result.datos) : {})
+  } catch (e) {
+    res.json({})
+  }
+})
+
+// guardar insumos
+app.post("/insumos", async (req, res) => {
+  try {
+    const data = JSON.stringify(req.body)
+
+    await db.run(`
+      INSERT INTO insumos (id, datos)
+      VALUES (1, ?)
+      ON CONFLICT(id) DO UPDATE SET datos=excluded.datos
+    `, [data])
+
+    res.sendStatus(200)
+  } catch (e) {
+    res.sendStatus(500)
+  }
+})
 /* ===== START ===== */
 app.listen(3000, () => {
   console.log("API clientes + pizzas OK en puerto 3000");
